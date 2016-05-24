@@ -1,0 +1,53 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <semaphore.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <time.h>
+#define NUM_THREADS 8
+#define AANT_TICKS 1000 
+
+pthread_t pthreads[NUM_THREADS];
+int aantal_tickets = AANT_TICKS;
+sem_t semaphore;
+int semaphore_v;
+
+void *ticket_broker(void * args){
+    int aantal_verkocht=0;
+    int brokernum = *((int *)args);
+    time_t rawtime;
+    struct tm * timeinfo;
+    while(1){
+        sleep(rand()%3);
+        sem_wait(&semaphore);
+        if(aantal_tickets>0){
+            time(&rawtime);
+            timeinfo = localtime(&rawtime);
+            printf("[%.24s] Broker %d sold 1 ticket. (only %d tickets left now)\n",asctime(timeinfo),brokernum,aantal_tickets);
+            aantal_tickets--;
+            aantal_verkocht++;
+        }
+        else{
+            printf("======================\nBroker %d sold %d tickets.\n==========================\n",brokernum,aantal_verkocht);
+            sem_post(&semaphore);
+            return 0;
+        }
+        sem_post(&semaphore);
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    sem_init(&semaphore, semaphore_v, 1);
+    int i=0,brokernum[NUM_THREADS];
+    for(i=0;i<NUM_THREADS;i++){
+        brokernum[i] = i;
+        pthread_create(&pthreads[i],NULL,ticket_broker,&brokernum[i]);
+    }
+    for(i=0;i<NUM_THREADS;i++){
+        pthread_join(pthreads[i],NULL);
+    }
+    return 0;
+}
+
+
