@@ -1,0 +1,6 @@
+#!/bin/bash
+x=$@  # Of x=$*
+# … code …
+shift
+# … code …
+set -- $x
